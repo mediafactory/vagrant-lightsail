@@ -23,14 +23,6 @@ module VagrantPlugins
                                  proto: pi[:protocol],
                                  port_no_from: pi[:from_port],
                                  port_no_to: pi[:to_port]
-          rescue Aws::Lightsail::Errors::InvalidInputException => e
-            env[:ui].info I18n.t 'vagrant_lightsail.port_open_fail',
-                                 proto: pi[:protocol],
-                                 port_no_from: pi[:from_port],
-                                 port_no_to: pi[:to_port],
-                                 error: e.to_s
-          rescue Aws::Lightsail::Errors => e
-            raise Errors::LightailError, message: e
           end
 
           @app.call(env)
