@@ -36,7 +36,7 @@ module VagrantPlugins
           env[:ui].info(" -- Instance Name: #{instance_name}")
           env[:ui].info(" -- Keypair: #{keypair_name}") if keypair_name
           env[:ui].info(" -- Region: #{region}")
-          env[:ui].info(" -- User Data: #{user_data}") if user_data
+          # env[:ui].info(" -- User Data: #{user_data}") if user_data
           env[:ui].info(' -- User Data: yes') if user_data
 
           options = {
@@ -57,17 +57,27 @@ module VagrantPlugins
           server = env[:lightsail_client].get_instance(instance_name: instance_name).instance
           env[:machine].id = server.name
 
-          # wait for ssh to be ready
-          retryable(tries: 120, sleep: 10) do
-            next if env[:interrupted]
-            env[:ui].info(I18n.t('vagrant_lightsail.waiting_for_ssh'))
-            raise 'not ready' unless env[:machine].communicate.ready?
+          unless env[:machine].config.vm.communicator != 'winrm'
+            env[:ui].info('SSH?????')
+            # wait for ssh to be ready
+            retryable(tries: 120, sleep: 10) do
+              next if env[:interrupted]
+              env[:ui].info(I18n.t('vagrant_lightsail.waiting_for_ssh'))
+              raise 'not ready' unless env[:machine].communicate.ready?
+            end
+
+          else
+            retryable(tries: 120, sleep: 10) do
+              next if env[:interrupted]
+              env[:ui].info('waiting for windows')
+              resp = env[:lightsail_client].get_instance_access_details(instance_name: instance_name)
+              raise 'not ready' unless resp.access_details.password_data.ciphertext != ''
+            end
           end
 
           env[:ui].info(I18n.t('vagrant_lightsail.ready'))
 
           terminate(env) if env[:interrupted]
-
           @app.call(env)
         end
 
